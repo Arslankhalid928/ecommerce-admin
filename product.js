@@ -1,97 +1,97 @@
-let products = [];
 
-function renderTable() {
-  let table = document.getElementById("tableBody");
-  table.innerHTML = "";
 
-  products.forEach((p, index) => {
-    table.innerHTML += `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${p.name}</td>
-        <td>${p.category}</td>
-        <td>${p.subCategory}</td>
-        <td>${p.cost}</td>
-        <td>${p.price}</td>
-        <td>${p.qty}</td>
-        <td>${p.sku}</td>
-        <td>
-          <span class="badge ${p.status ? 'bg-success' : 'bg-danger'}">
-            ${p.status ? 'Active' : 'Inactive'}
-          </span>
-        </td>
-        <td>
-          <button class="btn btn-warning btn-sm" onclick="editProduct(${index})">Edit</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${index})">Delete</button>
-        </td>
-      </tr>
-    `;
+let selectedRow;
+
+if (!localStorage.getItem("token")) {
+  window.location.href = "login.html";
+}
+
+$.get("https://dummyjson.com/products", function (data) {
+
+  data.products.forEach(p => {
+
+    let slug = p.title.toLowerCase().replaceAll(" ", "-");
+
+    $("#myTable tbody").append(`
+            <tr>
+                <td>${p.id}</td>
+                <td>${p.title}</td>
+                <td>${slug}</td>
+                <td>${p.price}</td>
+                <td>${p.price - 50}</td>
+                <td>SKU-${p.id}</td>
+                <td><span class="badge bg-success">Active</span></td>
+                <td>
+                    <button class="edit btn btn-warning btn-sm">Edit</button>
+                    <button class="delete btn btn-danger btn-sm">Delete</button>
+                </td>
+            </tr>
+        `);
   });
+
+  $("#myTable").DataTable();
+});
+
+
+$(document).on("click", ".edit", function () {
+
+  selectedRow = $(this).closest("tr");
+
+  $("#editTitle").val(selectedRow.find("td:eq(1)").text());
+  $("#editSlug").val(selectedRow.find("td:eq(2)").text());
+  $("#editPrice").val(selectedRow.find("td:eq(3)").text());
+  $("#editCost").val(selectedRow.find("td:eq(4)").text());
+  $("#editSKU").val(selectedRow.find("td:eq(5)").text());
+
+  let modal = new bootstrap.Modal(document.getElementById('editModal'));
+  modal.show();
+});
+
+
+$("#saveBtn").click(function () {
+
+  selectedRow.find("td:eq(1)").text($("#editTitle").val());
+  selectedRow.find("td:eq(2)").text($("#editSlug").val());
+  selectedRow.find("td:eq(3)").text($("#editPrice").val());
+  selectedRow.find("td:eq(4)").text($("#editCost").val());
+  selectedRow.find("td:eq(5)").text($("#editSKU").val());
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Updated!',
+    text: 'Product updated successfully'
+  });
+
+  bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+});
+
+
+$(document).on("click", ".delete", function () {
+
+  let row = $(this).closest("tr");
+
+  Swal.fire({
+    title: "Are you sure?",
+    text: "This product will be deleted!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes, delete it!"
+  }).then((result) => {
+
+    if (result.isConfirmed) {
+      row.remove();
+
+      Swal.fire("Deleted!", "Product removed successfully", "success");
+    }
+
+  });
+
+});
+
+
+
+function logout() {
+  localStorage.removeItem("token");
+  window.location.href = "login.html";
 }
 
-function saveProduct() {
-
-  let name = document.getElementById("name").value;
-  let cost = document.getElementById("cost").value;
-  let price = document.getElementById("price").value;
-  let qty = document.getElementById("qty").value;
-  let category = document.getElementById("category").value;
-  let subCategory = document.getElementById("subCategory").value;
-  let sku = document.getElementById("sku").value;
-  let status = document.getElementById("status").checked;
-  let editIndex = document.getElementById("editIndex").value;
-
-  if (!name || !cost || !price || !qty || !sku) {
-    alert("Fill all fields");
-    return;
-  }
-
-  let product = { name, cost, price, qty, category, subCategory, sku, status };
-
-  if (editIndex === "") {
-    products.push(product);
-  } else {
-    products[editIndex] = product;
-  }
-
-  renderTable();
-  resetForm();
-
-  bootstrap.Modal.getInstance(document.getElementById('productModal')).hide();
-}
-
-function editProduct(index) {
-  let p = products[index];
-
-  document.getElementById("name").value = p.name;
-  document.getElementById("cost").value = p.cost;
-  document.getElementById("price").value = p.price;
-  document.getElementById("qty").value = p.qty;
-  document.getElementById("category").value = p.category;
-  document.getElementById("subCategory").value = p.subCategory;
-  document.getElementById("sku").value = p.sku;
-  document.getElementById("status").checked = p.status;
-
-  document.getElementById("editIndex").value = index;
-
-  new bootstrap.Modal(document.getElementById('productModal')).show();
-}
-
-function deleteProduct(index) {
-  if (confirm("Delete product?")) {
-    products.splice(index, 1);
-    renderTable();
-  }
-}
-
-function resetForm() {
-  document.getElementById("name").value = "";
-  document.getElementById("cost").value = "";
-  document.getElementById("price").value = "";
-  document.getElementById("qty").value = "";
-  document.getElementById("sku").value = "";
-  document.getElementById("status").checked = false;
-  document.getElementById("editIndex").value = "";
-}
-
-renderTable();
