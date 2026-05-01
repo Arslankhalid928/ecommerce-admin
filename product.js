@@ -1,10 +1,10 @@
-
-
 let selectedRow;
+
 
 if (!localStorage.getItem("token")) {
   window.location.href = "login.html";
 }
+
 
 $.get("https://dummyjson.com/products", function (data) {
 
@@ -13,24 +13,62 @@ $.get("https://dummyjson.com/products", function (data) {
     let slug = p.title.toLowerCase().replaceAll(" ", "-");
 
     $("#myTable tbody").append(`
+        <tr>
+            <td>${p.id}</td>
+            <td>${p.title}</td>
+            <td>${slug}</td>
+            <td>${p.price}</td>
+            <td>${p.price - 50}</td>
+            <td>SKU-${p.id}</td>
+            <td><span class="badge bg-success">Active</span></td>
+            <td>
+                <button class="edit btn btn-warning btn-sm">Edit</button>
+                <button class="delete btn btn-danger btn-sm">Delete</button>
+            </td>
+        </tr>
+        `);
+  });
+
+  $("#myTable").DataTable();
+});
+
+
+$("#addBtn").click(function () {
+
+  let title = $("#addTitle").val();
+  let price = $("#addPrice").val();
+
+  $.ajax({
+    url: "https://dummyjson.com/products/add",
+    method: "POST",
+    contentType: "application/json",
+    data: JSON.stringify({ title, price }),
+
+    success: function (res) {
+
+      $("#myTable tbody").append(`
             <tr>
-                <td>${p.id}</td>
-                <td>${p.title}</td>
-                <td>${slug}</td>
-                <td>${p.price}</td>
-                <td>${p.price - 50}</td>
-                <td>SKU-${p.id}</td>
+                <td>${res.id}</td>
+                <td>${res.title}</td>
+                <td>${res.title.toLowerCase().replaceAll(" ", "-")}</td>
+                <td>${res.price}</td>
+                <td>${res.price - 50}</td>
+                <td>SKU-${res.id}</td>
                 <td><span class="badge bg-success">Active</span></td>
                 <td>
                     <button class="edit btn btn-warning btn-sm">Edit</button>
                     <button class="delete btn btn-danger btn-sm">Delete</button>
                 </td>
             </tr>
-        `);
-  });
+            `);
 
-  $("#myTable").DataTable();
+      Swal.fire("Added!", "Product created", "success");
+
+      bootstrap.Modal.getInstance(document.getElementById('addModal')).hide();
+    }
+  });
 });
+
 
 
 $(document).on("click", ".edit", function () {
@@ -43,49 +81,64 @@ $(document).on("click", ".edit", function () {
   $("#editCost").val(selectedRow.find("td:eq(4)").text());
   $("#editSKU").val(selectedRow.find("td:eq(5)").text());
 
-  let modal = new bootstrap.Modal(document.getElementById('editModal'));
-  modal.show();
+  new bootstrap.Modal(document.getElementById('editModal')).show();
 });
+
 
 
 $("#saveBtn").click(function () {
 
-  selectedRow.find("td:eq(1)").text($("#editTitle").val());
-  selectedRow.find("td:eq(2)").text($("#editSlug").val());
-  selectedRow.find("td:eq(3)").text($("#editPrice").val());
-  selectedRow.find("td:eq(4)").text($("#editCost").val());
-  selectedRow.find("td:eq(5)").text($("#editSKU").val());
+  let id = selectedRow.find("td:eq(0)").text();
 
-  Swal.fire({
-    icon: 'success',
-    title: 'Updated!',
-    text: 'Product updated successfully'
+  $.ajax({
+    url: `https://dummyjson.com/products/${id}`,
+    method: "PUT",
+    contentType: "application/json",
+    data: JSON.stringify({
+      title: $("#editTitle").val(),
+      price: $("#editPrice").val()
+    }),
+
+    success: function (res) {
+
+      selectedRow.find("td:eq(1)").text(res.title);
+      selectedRow.find("td:eq(3)").text(res.price);
+
+      Swal.fire("Updated!", "Product updated", "success");
+
+      bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+    }
   });
-
-  bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
 });
+
 
 
 $(document).on("click", ".delete", function () {
 
   let row = $(this).closest("tr");
+  let id = row.find("td:eq(0)").text();
 
   Swal.fire({
     title: "Are you sure?",
-    text: "This product will be deleted!",
     icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Yes, delete it!"
-  }).then((result) => {
+    showCancelButton: true
+  }).then(result => {
 
     if (result.isConfirmed) {
-      row.remove();
 
-      Swal.fire("Deleted!", "Product removed successfully", "success");
+      $.ajax({
+        url: `https://dummyjson.com/products/${id}`,
+        method: "DELETE",
+
+        success: function () {
+          row.remove();
+          Swal.fire("Deleted!", "", "success");
+        }
+      });
+
     }
 
   });
-
 });
 
 
