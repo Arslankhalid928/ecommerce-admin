@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Dashboard</title>
+<script src="auth.js"></script>
+</head>
+
+<body>
+
+<h1>Admin Dashboard</h1>
+
+<button onclick="go('category.html')">Category</button>
+<button onclick="go('subcategory.html')">Sub Category</button>
+<button onclick="go('products.html')">Products</button>
+
+<button onclick="logout()">Logout</button>
+
+<script>
+checkAuth();
+
+function go(page){
+window.location.href = page;
+}
+</script>
+
+</body>
+</html>
